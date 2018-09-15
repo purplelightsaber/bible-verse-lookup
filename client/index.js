@@ -6,18 +6,13 @@ var ignore_onend;
 var start_timestamp;
 var updatedResult = '';
 var alreadyBegun = false;
-var inputText;
+//var inputText;
 var verses = {text:""};
 var current_word_index = 0;
 var _stats = {incorrectwords: []};
 var pronunciation = {};
 window.onload = function() {
-let verse1 = {verseID: 1, chapterID: 1, bookID: 'Genesis', versionID: 'ESV', action: 'new'};
-
-  $.post( "/", verse1, function( data ) {
-    $('#verse').html(data.text);
-  });
-
+  document.getElementById('listen').addEventListener('click', startButton);
 };
 
 //-------------------------BEGIN Select Verse-------------------------//
@@ -34,7 +29,7 @@ function populateVerse(action) {
         let _versionID = 'esv';
         verse = {verseID: _verseID, chapterID: _chapterID, bookID: _bookID, versionID: _versionID};
     } else if (action == 'current') {
-        hideAllWords();
+        //hideAllWords();
     }
     current_word_index = 0;
     doSomethin(verse, action, _stats);
@@ -53,23 +48,23 @@ function setVerse(v) {
     $('#inputArea').val(v.text);
     $('#input_verse_id').val(v.bookID + ' ' + v.chapterID + ':' + v.verseID);
     verses = v;
-    populateSpans();
+    //populateSpans();
     _stats.incorrectwords = [];
 }
 
-function updateWordPronunciation() {
-    //{ verseID: { "difficultWord" : "whatIsaid" }, }
-    var whatIsaid = interim_span.innerHTML.trim();
-    if (whatIsaid != "") {
-        var difficultWord = verses.text[current_word_index].value;
-        //var myPronunciation = {};
-        //myPronunciation[difficultWord] = whatIsaid;
-        if (!pronunciation[verses.verseID]) {
-            pronunciation[verses.verseID] = {};
-        }
-        pronunciation[verses.verseID][difficultWord] = whatIsaid;
-    }
-}
+// function updateWordPronunciation() {
+//     //{ verseID: { "difficultWord" : "whatIsaid" }, }
+//     var whatIsaid = interim_span.innerHTML.trim();
+//     if (whatIsaid != "") {
+//         var difficultWord = verses.text[current_word_index].value;
+//         //var myPronunciation = {};
+//         //myPronunciation[difficultWord] = whatIsaid;
+//         if (!pronunciation[verses.verseID]) {
+//             pronunciation[verses.verseID] = {};
+//         }
+//         pronunciation[verses.verseID][difficultWord] = whatIsaid;
+//     }
+// }
 
 //-------------------------END Select Verse-------------------------//
 
@@ -85,7 +80,7 @@ if (!('webkitSpeechRecognition' in window)) {
 
   recognition.onstart = function() {
     //lower input area's text is stored in inputText var
-    inputText = document.getElementById("inputArea").value.toLowerCase();
+    //inputText = document.getElementById("inputArea").value.toLowerCase();
     
     
     recognizing = true;
@@ -155,106 +150,122 @@ if (!('webkitSpeechRecognition' in window)) {
   }
 
 //to verse display
-        current_word_index = outputIfMatches(final_transcript.split(' '), current_word_index);
+        //current_word_index = outputIfMatches(final_transcript.split(' '), current_word_index);
   };
 
+}
+
+function displayVerse(verseReference) {
+  let verse2 = {verseID: 1, chapterID: 1, bookID: 'Genesis', versionID: 'ESV', action: 'new'};
+
+  let inputVerse = verseReference[0];
+  let split = inputVerse.split(/(?:\s|:)/);
+  let _verseID = split.pop();
+  let _chapterID = split.pop();
+  let _bookID = split.join('');
+  let _versionID = 'esv';
+  let verse1 = {verseID: _verseID, chapterID: _chapterID, bookID: _bookID, versionID: _versionID, action: 'new'};
+
+  $.post( "/", verse1, function( data ) {
+    $('#verse').html(data.text);
+  });
 }
 //-------------------------END Speech Recognition-------------------------//
 
 //-------------------------BEGIN Recognition Processing-------------------------//
 
 
-function outputIfMatches(result_word_array, current_word_indx) {
-//    for (var i = 0; i < result_word_array.length; i++) {
-//        if (current_word_indx != verses.text.length) {
-//            if (result_word_array[i].toLocaleLowerCase() == verses.text[current_word_indx].toLocalLowerCase()) {
-//              //reveals the hidden html span with the id of 'i'
-//              displayWordMatch(current_word_indx, 'correct');
-//            } else {
-//                //word didn't match, try next one
-//              displayWordMatch(current_word_indx, 'incorrect');
-//              stats.incorrectwords.push(verses.text[current_word_indx]);
-//            }
-//            current_word_indx++;
-//        }
-//      }
-//    return current_word_indx;
-    for (var i = 0; i < result_word_array.length; i++) {
-        if (result_word_array[i].toLocaleLowerCase() == verses.text[current_word_indx].value) {
-            displayWordMatch(current_word_indx, 'correct');
-            current_word_indx++;
-        } else if (pronunciation[verses.verseID]) {
-            if (pronunciation[verses.verseID][verses.text[current_word_indx].value]) {
-                if (result_word_array[i].toLocaleLowerCase() == pronunciation[verses.verseID][verses.text[current_word_indx].value]) {
-                    displayWordMatch(current_word_indx, 'correct');
-                    current_word_indx++;   
-                }      
-            }        
-        }
-    }
-    return current_word_indx;
-    }
+// function outputIfMatches(result_word_array, current_word_indx) {
+// //    for (var i = 0; i < result_word_array.length; i++) {
+// //        if (current_word_indx != verses.text.length) {
+// //            if (result_word_array[i].toLocaleLowerCase() == verses.text[current_word_indx].toLocalLowerCase()) {
+// //              //reveals the hidden html span with the id of 'i'
+// //              displayWordMatch(current_word_indx, 'correct');
+// //            } else {
+// //                //word didn't match, try next one
+// //              displayWordMatch(current_word_indx, 'incorrect');
+// //              stats.incorrectwords.push(verses.text[current_word_indx]);
+// //            }
+// //            current_word_indx++;
+// //        }
+// //      }
+// //    return current_word_indx;
+//     for (var i = 0; i < result_word_array.length; i++) {
+//         if (result_word_array[i].toLocaleLowerCase() == verses.text[current_word_indx].value) {
+//             displayWordMatch(current_word_indx, 'correct');
+//             current_word_indx++;
+//         } else if (pronunciation[verses.verseID]) {
+//             if (pronunciation[verses.verseID][verses.text[current_word_indx].value]) {
+//                 if (result_word_array[i].toLocaleLowerCase() == pronunciation[verses.verseID][verses.text[current_word_indx].value]) {
+//                     displayWordMatch(current_word_indx, 'correct');
+//                     current_word_indx++;   
+//                 }      
+//             }        
+//         }
+//     }
+//     return current_word_indx;
+//     }
 
-function displayWordMatch(i, accurateString) {
-  document.getElementById("word" + i).style.visibility = 'visible';
-  document.getElementById("word" + i).classList.add(accurateString);
-  if (allWordsVisible()) {
-      alert("Congratulations!");
-  };
-}
+// function displayWordMatch(i, accurateString) {
+//   document.getElementById("word" + i).style.visibility = 'visible';
+//   document.getElementById("word" + i).classList.add(accurateString);
+//   if (allWordsVisible()) {
+//       alert("Congratulations!");
+//   };
+// }
 
-function showNextWord() {
-    //Yes this presents a race condition, can put in locking or something like that in the future.
-	displayWordMatch(current_word_index, 'correct');
-	current_word_index++;
-}
+// function showNextWord() {
+//     //Yes this presents a race condition, can put in locking or something like that in the future.
+// 	displayWordMatch(current_word_index, 'correct');
+// 	current_word_index++;
+// }
 
-function allWordsVisible() {
-    for (i=0; i < verses.text.length; i++) {
-        if ($('#word' + i).css('visibility') == 'hidden') {
-            return false;
-        }
-    }
-    return true;
-}
+// function allWordsVisible() {
+//     for (i=0; i < verses.text.length; i++) {
+//         if ($('#word' + i).css('visibility') == 'hidden') {
+//             return false;
+//         }
+//     }
+//     return true;
+// }
 
-function hideAllWords() {
-    for (i=0; i < verses.text.length; i++) {
-        $('#word' + i).css('visibility', 'hidden');
-    }
-    return true;
-}
+// function hideAllWords() {
+//     for (i=0; i < verses.text.length; i++) {
+//         $('#word' + i).css('visibility', 'hidden');
+//     }
+//     return true;
+// }
 
-function populateSpans() {
-        for (i=0; i < verses.text.length; i++) {
-        var newSpan = document.createElement('span');   
-        $(newSpan).css('visibility', 'hidden');
-        newSpan.id = ('word' + i);
-        var newContent = document.createTextNode(verses.text[i].text);  
-        newSpan.appendChild(newContent); 
+// function populateSpans() {
+//         for (i=0; i < verses.text.length; i++) {
+//         var newSpan = document.createElement('span');   
+//         $(newSpan).css('visibility', 'hidden');
+//         newSpan.id = ('word' + i);
+//         var newContent = document.createTextNode(verses.text[i].text);  
+//         newSpan.appendChild(newContent); 
     
-        var spaceSpan = document.createElement('span');
-        var space = document.createTextNode(' ');
-        spaceSpan.appendChild(space);
+//         var spaceSpan = document.createElement('span');
+//         var space = document.createTextNode(' ');
+//         spaceSpan.appendChild(space);
     
-        var currentDiv = document.getElementById('verse_display'); 
-        currentDiv.appendChild(newSpan);
-        currentDiv.appendChild(spaceSpan);
-    }
-}
+//         var currentDiv = document.getElementById('verse_display'); 
+//         currentDiv.appendChild(newSpan);
+//         currentDiv.appendChild(spaceSpan);
+//     }
+// }
 
 
 function showInfo(s) {
-  if (s) {
-    for (var child = info.firstChild; child; child = child.nextSibling) {
-      if (child.style) {
-        child.style.display = child.id == s ? 'inline' : 'none';
-      }
-    }
-    info.style.visibility = 'visible';
-  } else {
-    info.style.visibility = 'hidden';
-  }
+  // if (s) {
+  //   for (var child = info.firstChild; child; child = child.nextSibling) {
+  //     if (child.style) {
+  //       child.style.display = child.id == s ? 'inline' : 'none';
+  //     }
+  //   }
+  //   info.style.visibility = 'visible';
+  // } else {
+  //   info.style.visibility = 'hidden';
+  // }
 }
 //-------------------------END Recognition Processing-------------------------//
 
@@ -275,11 +286,12 @@ function startButton(event) {
   }
   $('.fa-microphone').addClass('recording');
   final_transcript = '';
-  recognition.lang = select_dialect.value;
+  //recognition.lang = select_dialect.value;
+  recognition.lang = 6;
   recognition.start();
   ignore_onend = false;
-  final_span.innerHTML = '';
-  interim_span.innerHTML = '';
+  //final_span.innerHTML = '';
+  //interim_span.innerHTML = '';
   showInfo('info_allow');
   start_timestamp = event.timeStamp;
 }

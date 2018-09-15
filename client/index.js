@@ -1,5 +1,4 @@
 const vrr = require('verse-reference-regex');
-//import createRegex from '../node_modules/verse-reference-regex/index.js ';
 
 var final_transcript = '';
 var recognizing = false;
@@ -19,8 +18,6 @@ let verse1 = {verseID: 1, chapterID: 1, bookID: 'Genesis', versionID: 'ESV', act
     $('#verse').html(data.text);
   });
 
-  const verseRequiringRegex = createRegex();
-  const match = `I'm talking about Prov 30:2-3 yo`.match(verseRequiringRegex);
 };
 
 //-------------------------BEGIN Select Verse-------------------------//
@@ -151,8 +148,12 @@ if (!('webkitSpeechRecognition' in window)) {
       }
     }
     
-//to word feedback block
-        interim_span.innerHTML = linebreak(transcript);
+  const verseRequiringRegex = vrr.createRegex();
+  const verseReference = final_transcript.match(verseRequiringRegex);
+  if (verseReference) {
+    displayVerse(verseReference);
+  }
+
 //to verse display
         current_word_index = outputIfMatches(final_transcript.split(' '), current_word_index);
   };
@@ -161,11 +162,7 @@ if (!('webkitSpeechRecognition' in window)) {
 //-------------------------END Speech Recognition-------------------------//
 
 //-------------------------BEGIN Recognition Processing-------------------------//
-function linebreak(s) {
-    var two_line = /\n\n/g;
-    var one_line = /\n/g;
-    return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
-}
+
 
 function outputIfMatches(result_word_array, current_word_indx) {
 //    for (var i = 0; i < result_word_array.length; i++) {
@@ -264,8 +261,11 @@ function showInfo(s) {
 function upgrade() {
   start_button.style.visibility = 'hidden';
   showInfo('info_upgrade');
-}
 
+  if (start_button.style.visibility == 'false') {
+    startButton(true);
+  }
+}
 
 function startButton(event) {
   if (recognizing) {
@@ -283,3 +283,4 @@ function startButton(event) {
   showInfo('info_allow');
   start_timestamp = event.timeStamp;
 }
+

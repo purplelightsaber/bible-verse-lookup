@@ -10,5 +10,8 @@ window.onload = function() {
   });
 };
 
-
+window.onerror = function(message, url, lineNumber) {  
+  $('#verse').html(message + ' url: ' + url + ' lineNumber: ' + lineNumber);
+  return false;
+};  
 

@@ -1,9 +1,9 @@
 const vrr = require('verse-reference-regex');
 var final_transcript = '';
-var recognizing = false;
 var ignore_onend;
 var start_timestamp;    
 var recognition;
+var verseCache;
 function recognize() {
     //-------------------------BEGIN Speech Recognition-------------------------//
     if (!('webkitSpeechRecognition' in window)) {
@@ -19,45 +19,47 @@ function recognize() {
         //inputText = document.getElementById("inputArea").value.toLowerCase();
         
         
-        recognizing = true;
-        showInfo('info_speak_now');
+        //showInfo('info_speak_now');
         };
     
         recognition.onerror = function(event) {
         if (event.error == 'no-speech') {
-            showInfo('info_no_speech');
+            //showInfo('info_no_speech');
             ignore_onend = true;
         }
         if (event.error == 'audio-capture') {
-            showInfo('info_no_microphone');
+            //showInfo('info_no_microphone');
             ignore_onend = true;
         }
         if (event.error == 'not-allowed') {
             if (event.timeStamp - start_timestamp < 100) {
-            showInfo('info_blocked');
+            //showInfo('info_blocked');
             } else {
-            showInfo('info_denied');
+            //showInfo('info_denied');
             }
             ignore_onend = true;
         }
         };
     
         recognition.onend = function() {
-        recognizing = false;
-        if (ignore_onend) {
-            return;
-        }
-        if (!final_transcript) {
-            showInfo('info_start');
-            return;
-        }
-        showInfo('');
-        if (window.getSelection) {
-            window.getSelection().removeAllRanges();
-            var range = document.createRange();
-            range.selectNode(document.getElementById('final_span'));
-            window.getSelection().addRange(range);
-        }
+            if ($('#listen').hasClass('listening')) {
+                return;
+            }
+            updateMonitor('killing it');
+            if (ignore_onend) {
+                return;
+            }
+            if (!final_transcript) {
+                //showInfo('info_start');
+                return;
+            }
+            //showInfo('');
+            if (window.getSelection) {
+                window.getSelection().removeAllRanges();
+                var range = document.createRange();
+                //range.selectNode(document.getElementById('final_span'));
+                window.getSelection().addRange(range);
+            }
         };
     
         recognition.onresult = function(event) {
@@ -79,35 +81,80 @@ function recognize() {
             }
         }
         
+        $('#what_is_being_said').text(linebreak(transcript));
         const verseRequiringRegex = vrr.createRegex();
         const verseReference = final_transcript.match(verseRequiringRegex);
         if (verseReference) {
-        displayVerse(verseReference);
+            getVerse(verseReference);
         }
         };
     
     }
 
 }
-  
-  function displayVerse(verseReference) {
-    let verse2 = {verseID: 1, chapterID: 1, bookID: 'Genesis', versionID: 'ESV', action: 'new'};
-  
+function linebreak(s) {
+    var two_line = /\n\n/g;
+    var one_line = /\n/g;
+    return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+}
+
+  function getVerse(verseReference) {
     let inputVerse = verseReference[0];
     let split = inputVerse.split(/(?:\s|:)/);
     let _verseID = split.pop();
     let _chapterID = split.pop();
     let _bookID = split.join('');
     let _versionID = 'esv';
-    let verse1 = {verseID: _verseID, chapterID: _chapterID, bookID: _bookID, versionID: _versionID, action: 'new'};
-  
-    $.post( "/", verse1, function( data ) {
-      $('#verse').html(data.text);
+    let verseObj = {verseID: _verseID, chapterID: _chapterID, bookID: _bookID, 
+                    versionID: _versionID, action: 'new', reference: inputVerse, text: ''};
+    if (!verseCache) {
+        verseCache = [];
+    }
+    const cachedVerse = verseInCache(verseObj);
+    updateMonitor(' -results- ');
+    if (!cachedVerse) {
+        verseCache.push(verseObj);
+        updateMonitor(' -call- ');
+        $.post( "/", verseObj, function( data ) {
+            updateMonitor(' -display- ');
+            displayVerse(data);
+            updateCache(data);
+        });
+    } else if (cachedVerse.text != '') {
+        displayVerse(cachedVerse);
+    }
+  }
+
+  function verseInCache(verseObj) {
+    let cachedVerse;
+    verseCache.forEach(element => {
+        if (verseObj.reference.toLowerCase() == element.reference.toLowerCase()) {
+            cachedVerse = element;
+        }
     });
+    return cachedVerse;
+  }
+
+  function updateCache(verseObj) {
+    verseCache.forEach(element => {
+        if (verseObj.reference.toLowerCase() == element.reference.toLowerCase()) {
+            element.text = verseObj.text;
+        }
+    });
+  }
+
+  function displayVerse(data) {
+    $('#verse').html(data.text);
+    $('#reference').html(data.reference);
+  }
+
+  function updateMonitor(text) {
+    $('#monitor').html($('#monitor')[0].textContent + text);
   }
   //-------------------------END Speech Recognition-------------------------//
   
   function showInfo(s) {
+    $('#verse').html(s);//here temporarily
     // if (s) {
     //   for (var child = info.firstChild; child; child = child.nextSibling) {
     //     if (child.style) {
@@ -122,29 +169,38 @@ function recognize() {
   //-------------------------END Recognition Processing-------------------------//
   
   function upgrade() {
-    start_button.style.visibility = 'hidden';
-    showInfo('info_upgrade');
+    // start_button.style.visibility = 'hidden';
+     showInfo('info_upgrade');
   
-    if (start_button.style.visibility == 'false') {
-      startButton(true);
-    }
+    // if (start_button.style.visibility == 'false') {
+    //   startButton(true);
+    // }
   }
   
   function startButton(event) {
-    if (recognizing) {
-      $('.fa-microphone').removeClass('recording');
-      recognition.stop();
+    if ($('#listen').hasClass('listening')) {
+      stopListening();
       return;
     }
-    $('.fa-microphone').addClass('recording');
+    startListening(event);
+    //showInfo('info_allow');
+  }
+
+  function stopListening() {
+    $('#listen').removeClass('listening');
+    $('#listen').text('Listen');
+    recognition.stop();
+  }
+
+  function startListening() {
+    $('#listen').addClass('listening');
+    $('#listen').text('Stop Listening');
     final_transcript = '';
     recognition.lang = 6;
     recognition.start();
     ignore_onend = false;
-    showInfo('info_allow');
     start_timestamp = event.timeStamp;
   }
-
 
 // //-------------------------BEGIN Languages-------------------------//
 // var langs =
